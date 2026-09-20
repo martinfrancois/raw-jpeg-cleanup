@@ -3,7 +3,7 @@ requires = ["setuptools==84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rawjpgfinder"
+name = "raw-jpeg-cleanup"
 version = "1.0.0"
 description = "List JPEG files that have a RAW companion with the same name, and move them to the trash on request"
 readme = "README.md"
@@ -13,10 +13,10 @@ requires-python = ">=3.10"
 dependencies = ["send2trash==2.1.0"]
 
 [project.scripts]
-rawjpgfinder = "rawjpgfinder:main"
+raw-jpeg-cleanup = "raw_jpeg_cleanup:main"
 
 [tool.setuptools]
-py-modules = ["rawjpgfinder"]
+py-modules = ["raw_jpeg_cleanup"]
 
 [tool.pytest.ini_options]
-testpaths = ["test_rawjpgfinder.py"]
+testpaths = ["test_raw_jpeg_cleanup.py"]
