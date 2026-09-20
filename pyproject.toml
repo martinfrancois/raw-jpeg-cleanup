@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rawjpgfinder"
+version = "1.0.0"
+description = "List JPEG files that have a RAW companion with the same name, and move them to the trash on request"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = ["send2trash==2.1.0"]
+
+[project.scripts]
+rawjpgfinder = "rawjpgfinder:main"
+
+[tool.setuptools]
+py-modules = ["rawjpgfinder"]
+
+[tool.pytest.ini_options]
+testpaths = ["test_rawjpgfinder.py"]
