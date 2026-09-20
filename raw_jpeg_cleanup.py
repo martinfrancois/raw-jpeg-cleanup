@@ -126,7 +126,7 @@ def trash_pairs(pairs: Sequence[Pair], raw_extensions: frozenset[str]) -> tuple[
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="rawjpgfinder",
+        prog="raw-jpeg-cleanup",
         description=(
             "List JPEG files that have a RAW file with the same name in the same directory. "
             "Without --trash nothing is changed."

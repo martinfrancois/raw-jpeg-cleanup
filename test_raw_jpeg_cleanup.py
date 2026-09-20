@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import pytest
 
-import rawjpgfinder
-from rawjpgfinder import DEFAULT_RAW_EXTENSIONS, Pair, find_pairs, main, normalize_extensions, trash_pairs
+import raw_jpeg_cleanup
+from raw_jpeg_cleanup import DEFAULT_RAW_EXTENSIONS, Pair, find_pairs, main, normalize_extensions, trash_pairs
 
 RAW = normalize_extensions(DEFAULT_RAW_EXTENSIONS)
 EXAMPLES = Path(__file__).parent / "examples" / "photos"
@@ -84,7 +84,7 @@ def test_normalize_extensions_rejects_empty_and_jpeg() -> None:
 
 def test_dry_run_is_the_default_and_changes_nothing(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     touch(tmp_path, "a.arw", "a.jpg")
-    with patch.object(rawjpgfinder.send2trash, "send2trash") as trash:
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash:
         assert main([str(tmp_path)]) == 0
     trash.assert_not_called()
     out, err = capsys.readouterr()
@@ -95,7 +95,7 @@ def test_dry_run_is_the_default_and_changes_nothing(tmp_path: Path, capsys: pyte
 
 def test_trash_flag_trashes_only_paired_jpegs(tmp_path: Path) -> None:
     touch(tmp_path, "a.arw", "a.jpg", "notes.txt", "notes.jpg", "lonely.jpg")
-    with patch.object(rawjpgfinder.send2trash, "send2trash") as trash:
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash:
         assert main([str(tmp_path), "--trash"]) == 0
     trash.assert_called_once_with(str(tmp_path / "a.jpg"))
 
@@ -105,7 +105,7 @@ def test_pair_is_revalidated_right_before_trashing(tmp_path: Path, capsys: pytes
     pairs = find_pairs(tmp_path, RAW)
     assert jpegs(pairs) == ["a.jpg", "b.jpg"]
     (tmp_path / "a.arw").unlink()
-    with patch.object(rawjpgfinder.send2trash, "send2trash") as trash:
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash:
         assert trash_pairs(pairs, RAW) == (1, 1)
     trash.assert_called_once_with(str(tmp_path / "b.jpg"))
     assert "skip (no RAW companion any more)" in capsys.readouterr().err
@@ -114,7 +114,7 @@ def test_pair_is_revalidated_right_before_trashing(tmp_path: Path, capsys: pytes
 def test_trash_failure_is_reported_and_skipped(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     touch(tmp_path, "a.arw", "a.jpg")
     pairs = find_pairs(tmp_path, RAW)
-    with patch.object(rawjpgfinder.send2trash, "send2trash", side_effect=OSError("no trash here")):
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash", side_effect=OSError("no trash here")):
         assert trash_pairs(pairs, RAW) == (0, 1)
     assert "no trash here" in capsys.readouterr().err
     assert (tmp_path / "a.jpg").exists()

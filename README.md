@@ -1,4 +1,4 @@
-# rawjpgfinder
+# raw-jpeg-cleanup
 
 Lists JPEG files that have a RAW file with the same name next to them, and moves those JPEGs to the system trash when you ask for it.
 
@@ -28,26 +28,26 @@ python3 -m venv .venv
 python -m pip install -r requirements.txt -e .
 ```
 
-This puts a `rawjpgfinder` command on the virtualenv's PATH.
+This puts a `raw-jpeg-cleanup` command on the virtualenv's PATH.
 
 ## Usage
 
 Dry run. Nothing is changed. One selected JPEG per line on stdout, a count on stderr:
 
 ```sh
-rawjpgfinder /path/to/photos
+raw-jpeg-cleanup /path/to/photos
 ```
 
 Trash the selected JPEGs:
 
 ```sh
-rawjpgfinder /path/to/photos --trash
+raw-jpeg-cleanup /path/to/photos --trash
 ```
 
 Use a different RAW allowlist, for example only Sony files:
 
 ```sh
-rawjpgfinder /path/to/photos --raw-extensions arw
+raw-jpeg-cleanup /path/to/photos --raw-extensions arw
 ```
 
 Trashed files go to the system trash, not to `rm`. To get one back, open the trash in your file manager and restore it. On Linux the file sits in `~/.local/share/Trash/files/`, or in `.Trash-<uid>/files/` at the root of the mount the photos live on when that mount is not the home directory's.
@@ -57,7 +57,7 @@ Trashed files go to the system trash, not to `rm`. To get one back, open the tra
 `examples/photos/` holds empty placeholder files. Run the dry run on it:
 
 ```sh
-rawjpgfinder examples/photos
+raw-jpeg-cleanup examples/photos
 ```
 
 Expected output:
