@@ -46,6 +46,11 @@ def test_extension_case_is_ignored_and_stem_case_is_not(tmp_path: Path) -> None:
     assert jpegs(find_pairs(tmp_path, RAW)) == ["B.Jpg", "a.jpeg"]
 
 
+def test_first_raw_in_sort_order_is_the_companion(tmp_path: Path) -> None:
+    touch(tmp_path, "a.dng", "a.ARW", "a.arw", "a.jpg")
+    assert find_pairs(tmp_path, RAW) == [Pair(jpeg=tmp_path / "a.jpg", raw=tmp_path / "a.ARW")]
+
+
 def test_raw_must_be_in_the_same_directory(tmp_path: Path) -> None:
     (tmp_path / "raw").mkdir()
     touch(tmp_path / "raw", "DSC00001.ARW")
