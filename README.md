@@ -44,6 +44,8 @@ Trash the selected JPEGs:
 raw-jpeg-cleanup /path/to/photos --trash
 ```
 
+The command exits with status 1 when `--trash` skipped any selected JPEG, and with status 2 when the folder does not exist or the RAW list is invalid.
+
 Use a different RAW allowlist, for example only Sony files:
 
 ```sh

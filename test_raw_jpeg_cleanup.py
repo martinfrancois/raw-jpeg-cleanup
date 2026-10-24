@@ -4,7 +4,16 @@ from unittest.mock import patch
 import pytest
 
 import raw_jpeg_cleanup
-from raw_jpeg_cleanup import DEFAULT_RAW_EXTENSIONS, Pair, find_pairs, main, normalize_extensions, trash_pairs
+from raw_jpeg_cleanup import (
+    DEFAULT_RAW_EXTENSIONS,
+    EXIT_SKIPPED,
+    EXIT_USAGE,
+    Pair,
+    find_pairs,
+    main,
+    normalize_extensions,
+    trash_pairs,
+)
 
 RAW = normalize_extensions(DEFAULT_RAW_EXTENSIONS)
 EXAMPLES = Path(__file__).parent / "examples" / "photos"
@@ -124,8 +133,19 @@ def test_trash_failure_is_reported_and_skipped(tmp_path: Path, capsys: pytest.Ca
     assert (tmp_path / "a.jpg").exists()
 
 
+def test_trash_run_with_a_skipped_file_exits_nonzero(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    touch(tmp_path, "a.arw", "a.jpg", "b.arw", "b.jpg")
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash", side_effect=[None, OSError("no trash here")]):
+        assert main([str(tmp_path), "--trash"]) == EXIT_SKIPPED
+    assert "trashed 1 JPEG file(s), skipped 1." in capsys.readouterr().err
+
+
 def test_missing_folder_fails(tmp_path: Path) -> None:
-    assert main([str(tmp_path / "nope")]) == 2
+    assert main([str(tmp_path / "nope")]) == EXIT_USAGE
+
+
+def test_invalid_raw_extensions_fail(tmp_path: Path) -> None:
+    assert main([str(tmp_path), "--raw-extensions", "jpg"]) == EXIT_USAGE
 
 
 def test_example_folder(capsys: pytest.CaptureFixture[str]) -> None:

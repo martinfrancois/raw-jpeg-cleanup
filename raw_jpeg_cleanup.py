@@ -21,6 +21,10 @@ DEFAULT_RAW_EXTENSIONS = (
     ".pef", ".raf", ".raw", ".rw2", ".rwl", ".sr2", ".srw", ".x3f",
 )
 
+EXIT_SKIPPED = 1
+# argparse exits with 2 on bad arguments, so the tool's own usage errors match it.
+EXIT_USAGE = 2
+
 
 @dataclass(frozen=True)
 class Pair:
@@ -154,12 +158,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     folder = args.folder
     if not folder.is_dir():
         print(f"not a directory: {folder}", file=sys.stderr)
-        return 2
+        return EXIT_USAGE
     try:
         raw_extensions = normalize_extensions(args.raw_extensions.split(","))
     except ValueError as error:
         print(str(error), file=sys.stderr)
-        return 2
+        return EXIT_USAGE
 
     pairs = find_pairs(folder, raw_extensions)
     if not args.trash:
@@ -171,7 +175,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     trashed, skipped = trash_pairs(pairs, raw_extensions)
     print(f"trashed {trashed} JPEG file(s), skipped {skipped}.", file=sys.stderr)
-    return 0
+    return EXIT_SKIPPED if skipped else 0
 
 
 if __name__ == "__main__":
