@@ -1,2 +1,2 @@
-send2trash==2.1.0
+# Test tooling only. Runtime dependencies live in pyproject.toml so a bump touches one file.
 pytest==9.1.1
