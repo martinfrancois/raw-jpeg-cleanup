@@ -26,8 +26,7 @@ def test_jpeg_with_raw_companion_is_selected(tmp_path: Path) -> None:
 
 
 def test_jpeg_with_non_raw_twin_is_not_selected(tmp_path: Path) -> None:
-    # Same stem, but the twin is not a RAW file. The first version of this tool
-    # trashed such JPEGs because it paired on the name alone.
+    # Same stem, but the twin is not a RAW file.
     touch(tmp_path, "notes.txt", "notes.JPG", "scan.png", "scan.jpg", "a.jpg", "a.jpeg")
     assert find_pairs(tmp_path, RAW) == []
 
