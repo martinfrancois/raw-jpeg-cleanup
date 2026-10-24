@@ -46,13 +46,19 @@ def normalize_extensions(values: Iterable[str]) -> frozenset[str]:
     return frozenset(normalized)
 
 
-def raw_files_by_stem(directory: Path, raw_extensions: frozenset[str]) -> dict[str, list[Path]]:
-    """Index the regular RAW files in one directory by their stem.
+def is_jpeg(path: Path) -> bool:
+    """Return whether `path` is an existing file with a JPEG extension in any letter case."""
+    return path.suffix.lower() in JPEG_EXTENSIONS and path.is_file()
+
+
+def raw_files_by_stem(directory: Path, raw_extensions: frozenset[str]) -> dict[str, Path]:
+    """Map each stem to the regular RAW file in one directory that carries it.
 
     The stem is taken as is, so the comparison is case-sensitive. The extension
-    is lowercased before it is checked against the allowlist.
+    is lowercased before it is checked against the allowlist. When several RAW
+    files share a stem, the one whose name sorts first wins.
     """
-    index: dict[str, list[Path]] = {}
+    index: dict[str, Path] = {}
     try:
         entries = list(os.scandir(directory))
     except OSError:
@@ -60,9 +66,8 @@ def raw_files_by_stem(directory: Path, raw_extensions: frozenset[str]) -> dict[s
     for entry in entries:
         candidate = Path(entry.path)
         if candidate.suffix.lower() in raw_extensions and entry.is_file(follow_symlinks=False):
-            index.setdefault(candidate.stem, []).append(candidate)
-    for matches in index.values():
-        matches.sort()
+            current = index.get(candidate.stem)
+            index[candidate.stem] = candidate if current is None else min(current, candidate)
     return index
 
 
@@ -70,13 +75,11 @@ def raw_companion(jpeg: Path, raw_extensions: frozenset[str]) -> Path | None:
     """Return the RAW file next to `jpeg` with the same stem, or None.
 
     Reads the directory fresh on every call, so it doubles as the check right
-    before trashing. When several RAW files share the stem, the one whose name
-    sorts first is returned.
+    before trashing.
     """
-    if jpeg.suffix.lower() not in JPEG_EXTENSIONS or not jpeg.is_file():
+    if not is_jpeg(jpeg):
         return None
-    matches = raw_files_by_stem(jpeg.parent, raw_extensions).get(jpeg.stem)
-    return matches[0] if matches else None
+    return raw_files_by_stem(jpeg.parent, raw_extensions).get(jpeg.stem)
 
 
 def find_pairs(folder: Path, raw_extensions: frozenset[str]) -> list[Pair]:
@@ -87,13 +90,13 @@ def find_pairs(folder: Path, raw_extensions: frozenset[str]) -> list[Pair]:
         index = None
         for name in files:
             jpeg = directory / name
-            if jpeg.suffix.lower() not in JPEG_EXTENSIONS or not jpeg.is_file():
+            if not is_jpeg(jpeg):
                 continue
             if index is None:
                 index = raw_files_by_stem(directory, raw_extensions)
-            matches = index.get(jpeg.stem)
-            if matches:
-                pairs.append(Pair(jpeg=jpeg, raw=matches[0]))
+            raw = index.get(jpeg.stem)
+            if raw is not None:
+                pairs.append(Pair(jpeg=jpeg, raw=raw))
     return sorted(pairs, key=lambda pair: str(pair.jpeg))
 
 
