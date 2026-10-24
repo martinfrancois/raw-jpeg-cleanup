@@ -10,4 +10,3 @@ dist/
 .vscode/
 *.swp
 .DS_Store
-jpg_log*.txt
