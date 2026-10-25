@@ -101,7 +101,7 @@ def test_dry_run_is_the_default_and_changes_nothing(tmp_path: Path, capsys: pyte
         assert main([str(tmp_path)]) == 0
     trash.assert_not_called()
     out, err = capsys.readouterr()
-    assert str(tmp_path / "a.jpg") in out
+    assert out == str(tmp_path / "a.jpg") + "\n"
     assert "1 JPEG file(s) would be trashed" in err
     assert (tmp_path / "a.jpg").exists()
 
@@ -151,7 +151,7 @@ def test_invalid_raw_extensions_fail(tmp_path: Path) -> None:
 def test_example_folder(capsys: pytest.CaptureFixture[str]) -> None:
     assert main([str(EXAMPLES)]) == 0
     out, _err = capsys.readouterr()
-    selected = [line.split("\t")[0] for line in out.splitlines()]
+    selected = out.splitlines()
     assert selected == [
         str(EXAMPLES / "2024-05" / "DSC00010.JPG"),
         str(EXAMPLES / "DSC00001.JPG"),
