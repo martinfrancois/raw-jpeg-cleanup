@@ -29,16 +29,15 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements.txt
-            pyproject.toml
       - name: Install, test and run the documented synthetic example on each Python version
         run: |
           for version in $PYTHON_VERSIONS; do
             echo "::group::Python $version"
             venv="$RUNNER_TEMP/venv-$version"
             "python$version" -m venv "$venv"
-            "$venv/bin/python" -m pip install -r requirements.txt -e .
-            "$venv/bin/raw-jpeg-cleanup" --help
+            "$venv/bin/python" -m pip install -r requirements.txt
+            "$venv/bin/python" raw_jpeg_cleanup.py --help
             "$venv/bin/python" -m pytest
-            "$venv/bin/raw-jpeg-cleanup" examples/photos
+            "$venv/bin/python" raw_jpeg_cleanup.py examples/photos
             echo "::endgroup::"
           done

@@ -168,7 +168,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     pairs = find_pairs(folder, raw_extensions)
     if not args.trash:
         for pair in pairs:
-            print(f"{pair.jpeg}\t(RAW: {pair.raw.name})")
+            print(pair.jpeg)
         sys.stdout.flush()
         print(f"{len(pairs)} JPEG file(s) would be trashed. Re-run with --trash to do it.", file=sys.stderr)
         return 0
