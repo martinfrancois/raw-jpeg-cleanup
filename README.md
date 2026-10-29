@@ -8,6 +8,8 @@ Finds JPG files where a RAW file with the same name is in the same folder.
 
 Requires Python 3.10 or newer. A pair has the same case-sensitive filename stem, a `.jpg` or `.jpeg` extension, and a regular RAW file beside it. RAW extensions come from the allowlist shown by `--help`; `--raw-extensions` replaces it. Symlinks do not count as RAW companions. The tool compares names, not image contents. It checks each pair again before trashing. Restore trashed files through your file manager.
 
+Exit status is 0 after a successful run, 1 when a `--trash` run skips any selected JPEG, and 2 for usage errors such as a missing folder or an invalid RAW extension list.
+
 For a dry run on synthetic files, use `python3 raw_jpeg_cleanup.py examples/photos`. It prints these paths:
 
 ```text
