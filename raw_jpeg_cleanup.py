@@ -22,6 +22,7 @@ DEFAULT_RAW_EXTENSIONS = (
 )
 
 EXIT_SKIPPED = 1
+EXIT_SCAN_FAILED = 1
 # argparse exits with 2 on bad arguments, so the tool's own usage errors match it.
 EXIT_USAGE = 2
 
@@ -63,10 +64,7 @@ def raw_files_by_stem(directory: Path, raw_extensions: frozenset[str]) -> dict[s
     files share a stem, the one whose name sorts first wins.
     """
     index: dict[str, Path] = {}
-    try:
-        entries = list(os.scandir(directory))
-    except OSError:
-        return index
+    entries = list(os.scandir(directory))
     for entry in entries:
         candidate = Path(entry.path)
         if candidate.suffix.lower() in raw_extensions and entry.is_file(follow_symlinks=False):
@@ -86,10 +84,15 @@ def raw_companion(jpeg: Path, raw_extensions: frozenset[str]) -> Path | None:
     return raw_files_by_stem(jpeg.parent, raw_extensions).get(jpeg.stem)
 
 
+def raise_scan_error(error: OSError) -> None:
+    """Stop traversal rather than treating an unreadable subtree as empty."""
+    raise error
+
+
 def find_pairs(folder: Path, raw_extensions: frozenset[str]) -> list[Pair]:
     """Walk `folder` and return every JPEG that has a RAW companion, sorted by path."""
     pairs = []
-    for root, _dirs, files in os.walk(folder):
+    for root, _dirs, files in os.walk(folder, onerror=raise_scan_error):
         directory = Path(root)
         index = None
         for name in files:
@@ -114,12 +117,12 @@ def trash_pairs(pairs: Sequence[Pair], raw_extensions: frozenset[str]) -> tuple[
     trashed = 0
     skipped = 0
     for pair in pairs:
-        current_raw = raw_companion(pair.jpeg, raw_extensions)
-        if current_raw is None:
-            print(f"skip (no RAW companion any more): {pair.jpeg}", file=sys.stderr)
-            skipped += 1
-            continue
         try:
+            current_raw = raw_companion(pair.jpeg, raw_extensions)
+            if current_raw is None:
+                print(f"skip (no RAW companion any more): {pair.jpeg}", file=sys.stderr)
+                skipped += 1
+                continue
             send2trash.send2trash(str(pair.jpeg))
         except OSError as error:
             print(f"skip ({error}): {pair.jpeg}", file=sys.stderr)
@@ -165,7 +168,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(str(error), file=sys.stderr)
         return EXIT_USAGE
 
-    pairs = find_pairs(folder, raw_extensions)
+    try:
+        pairs = find_pairs(folder, raw_extensions)
+    except OSError as error:
+        path = error.filename or folder
+        detail = error.strerror or str(error)
+        print(f'cannot scan directory "{path}": {detail}; check directory access', file=sys.stderr)
+        return EXIT_SCAN_FAILED
     if not args.trash:
         for pair in pairs:
             print(pair.jpeg)

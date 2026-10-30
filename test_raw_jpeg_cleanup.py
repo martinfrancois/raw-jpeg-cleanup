@@ -157,3 +157,59 @@ def test_example_folder(capsys: pytest.CaptureFixture[str]) -> None:
         str(EXAMPLES / "DSC00001.JPG"),
         str(EXAMPLES / "DSC00002.jpeg"),
     ]
+
+
+@pytest.mark.parametrize("trash_requested", [False, True])
+def test_unreadable_subtree_fails_before_listing_or_trashing(tmp_path, capsys, monkeypatch, trash_requested):
+    touch(tmp_path, "a.jpg", "a.arw")
+    unreadable = tmp_path / "unreadable"
+    unreadable.mkdir()
+    touch(unreadable, "b.jpg", "b.arw")
+    real_scandir = raw_jpeg_cleanup.os.scandir
+
+    def scandir(path):
+        if Path(path) == unreadable:
+            raise PermissionError(13, "Permission denied", str(unreadable))
+        return real_scandir(path)
+
+    monkeypatch.setattr(raw_jpeg_cleanup.os, "scandir", scandir)
+    with patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash:
+        assert main([str(tmp_path)] + (["--trash"] if trash_requested else [])) == 1
+    trash.assert_not_called()
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert str(unreadable) in err
+    assert "cannot scan directory" in err
+    assert "would be trashed" not in err
+    assert (tmp_path / "a.jpg").exists()
+
+
+@pytest.mark.parametrize("trash_requested", [False, True])
+def test_raw_directory_read_error_fails_scan(tmp_path, capsys, trash_requested):
+    touch(tmp_path, "a.jpg", "a.arw")
+    with (
+        patch.object(raw_jpeg_cleanup.os, "walk", return_value=[(str(tmp_path), [], ["a.jpg", "a.arw"])]),
+        patch.object(raw_jpeg_cleanup.os, "scandir", side_effect=PermissionError(13, "Permission denied", str(tmp_path))),
+        patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash,
+    ):
+        assert main([str(tmp_path)] + (["--trash"] if trash_requested else [])) == 1
+    trash.assert_not_called()
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert str(tmp_path) in err
+    assert "cannot scan directory" in err
+
+
+def test_raw_directory_read_error_during_recheck_skips_jpeg(tmp_path, capsys):
+    touch(tmp_path, "a.jpg", "a.arw")
+    pairs = find_pairs(tmp_path, RAW)
+    with (
+        patch.object(raw_jpeg_cleanup.os, "scandir", side_effect=PermissionError(13, "Permission denied", str(tmp_path))),
+        patch.object(raw_jpeg_cleanup.send2trash, "send2trash") as trash,
+    ):
+        assert trash_pairs(pairs, RAW) == (0, 1)
+    trash.assert_not_called()
+    err = capsys.readouterr().err
+    assert str(tmp_path) in err
+    assert "Permission denied" in err
+    assert (tmp_path / "a.jpg").exists()
